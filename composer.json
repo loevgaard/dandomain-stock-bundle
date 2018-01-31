@@ -1,0 +1,51 @@
+{
+    "name": "loevgaard/dandomain-stock-bundle",
+    "description": "Symfony bundle to handle stock i Dandomain, especially stock movements",
+    "type": "symfony-bundle",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Joachim Løvgaard",
+            "email": "joachim@loevgaard.dk"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": "^7.1",
+        "brick/math": "^0.7.0",
+        "doctrine/doctrine-bundle": "^1.6",
+        "doctrine/orm": "^2.5",
+        "knplabs/doctrine-behaviors": "^1.1",
+        "loevgaard/dandomain-foundation-bundle": "dev-master",
+        "moneyphp/money": "^3.0",
+        "symfony/framework-bundle": "^3.0||^4.0",
+        "symfony/validator": "^3.0||^4.0",
+        "symfony/yaml": "^3.0||^4.0"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^2.0",
+        "phpunit/phpunit": "^5.5||^6.0",
+        "symfony/phpunit-bridge": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Loevgaard\\DandomainStockBundle\\": ""
+        },
+        "exclude-from-classmap": [
+            "/Tests/"
+        ]
+    },
+    "scripts": {
+        "test": "phpunit",
+        "check-style": "./vendor/bin/php-cs-fixer fix --verbose --dry-run",
+        "fix-style": "./vendor/bin/php-cs-fixer fix --verbose"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0-dev"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
