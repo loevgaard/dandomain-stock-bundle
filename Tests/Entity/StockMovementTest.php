@@ -45,7 +45,7 @@ class StockMovementTest extends TestCase
             ->setQuantity($qty)
             ->setRetailPrice($retailPrice)
             ->setPrice($price)
-            ->setType(StockMovement::TYPE_ORDER)
+            ->setType(StockMovement::TYPE_SALE)
             ->setReference('order')
             ->setComplaint(false)
             ->setVatPercentage(25.0)
@@ -58,7 +58,7 @@ class StockMovementTest extends TestCase
         $this->assertSame(1, $stockMovement->getId());
         $this->assertSame($qty, $stockMovement->getQuantity());
         $this->assertSame('DKK', $stockMovement->getCurrency());
-        $this->assertSame(StockMovement::TYPE_ORDER, $stockMovement->getType());
+        $this->assertSame(StockMovement::TYPE_SALE, $stockMovement->getType());
         $this->assertSame('order', $stockMovement->getReference());
         $this->assertFalse($stockMovement->isComplaint());
         $this->assertSame(25.0, $stockMovement->getVatPercentage());
@@ -115,5 +115,53 @@ class StockMovementTest extends TestCase
         $this->expectException(UnsetCurrencyException::class);
         $stockMovement = $this->getMockForAbstractClass(StockMovement::class);
         $stockMovement->getPrice();
+    }
+
+    /**
+     * @throws CurrencyMismatchException
+     * @throws UnsetCurrencyException
+     * @throws \Loevgaard\DandomainStockBundle\Exception\StockMovementProductMismatchException
+     */
+    public function testDiff()
+    {
+        $diffTests = [
+            ['original' => 1, 'new' => 1, 'expected' => 0],
+            ['original' => 0, 'new' => 1, 'expected' => 1],
+            ['original' => 0, 'new' => 2, 'expected' => 2],
+            ['original' => -1, 'new' => 1, 'expected' => 2],
+
+            ['original' => 1, 'new' => -1, 'expected' => -2],
+            ['original' => 0, 'new' => -1, 'expected' => -1],
+            ['original' => 0, 'new' => -2, 'expected' => -2],
+            ['original' => -1, 'new' => -1, 'expected' => 0],
+
+            ['original' => 0, 'new' => 0, 'expected' => 0],
+
+            ['original' => 2, 'new' => 3, 'expected' => 1],
+            ['original' => 3, 'new' => 2, 'expected' => -1],
+
+            ['original' => -2, 'new' => -3, 'expected' => -1],
+            ['original' => -3, 'new' => -2, 'expected' => 1],
+
+            ['original' => 3, 'new' => 0, 'expected' => -3],
+            ['original' => -3, 'new' => 0, 'expected' => 3],
+        ];
+
+        foreach ($diffTests as $diffTest) {
+            $originalStockMovement = $this->getMockForAbstractClass(StockMovement::class);
+            $stockMovement = $this->getMockForAbstractClass(StockMovement::class);
+
+            $product = new Product();
+            $product->setId(1);
+
+            $price = new Money(100, new Currency('DKK'));
+
+            $originalStockMovement->setQuantity($diffTest['original'])->setPrice($price)->setProduct($product);
+            $stockMovement->setQuantity($diffTest['new'])->setPrice($price)->setProduct($product);
+
+            $diff = $originalStockMovement->diff($stockMovement);
+
+            $this->assertSame($diffTest['expected'], $diff->getQuantity());
+        }
     }
 }

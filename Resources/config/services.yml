@@ -1,8 +1,9 @@
 services:
-    # Factories
+    # Repositories
     loevgaard_dandomain_stock.factory.stock_movement:
-        class: Loevgaard\DandomainStockBundle\Factory\StockMovementFactory
+        class: Loevgaard\DandomainStockBundle\Repository\StockMovementRepository
         arguments:
+            - "@doctrine"
             - "%loevgaard_dandomain_stock.stock_movement_class%"
 
     # Event Listeners / Subscribers

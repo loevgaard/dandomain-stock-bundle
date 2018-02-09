@@ -16,6 +16,7 @@
         "doctrine/doctrine-bundle": "^1.6",
         "doctrine/orm": "^2.5",
         "knplabs/doctrine-behaviors": "^1.1",
+        "loevgaard/dandomain-foundation-entities": "dev-master",
         "loevgaard/dandomain-foundation-bundle": "dev-master",
         "moneyphp/money": "^3.0",
         "symfony/framework-bundle": "^3.0||^4.0",
@@ -43,7 +44,8 @@
     "extra": {
         "branch-alias": {
             "dev-master": "1.0-dev"
-        }
+        },
+        "entity-bundle-dir": "DandomainFoundation/Entity/"
     },
     "config": {
         "sort-packages": true

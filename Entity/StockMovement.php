@@ -11,13 +11,13 @@ use Knp\DoctrineBehaviors\Model\Timestampable\Timestampable;
 use Loevgaard\DandomainFoundation\Entity\Generated\OrderLineInterface;
 use Loevgaard\DandomainFoundation\Entity\Generated\ProductInterface;
 use Loevgaard\DandomainStockBundle\Exception\CurrencyMismatchException;
+use Loevgaard\DandomainStockBundle\Exception\StockMovementProductMismatchException;
 use Loevgaard\DandomainStockBundle\Exception\UndefinedPriceForCurrencyException;
 use Loevgaard\DandomainStockBundle\Exception\UnsetCurrencyException;
 use Loevgaard\DandomainStockBundle\Exception\UnsetProductException;
 use Money\Currency;
 use Money\Money;
 use Symfony\Component\Validator\Constraints as FormAssert;
-use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 /**
  * @method Money getRetailPriceInclVat()
@@ -34,7 +34,7 @@ abstract class StockMovement
     use Blameable;
     use Timestampable;
 
-    const TYPE_ORDER = 'order';
+    const TYPE_SALE = 'sale';
     const TYPE_RETURN = 'return';
     const TYPE_REGULATION = 'regulation';
     const TYPE_DELIVERY = 'delivery';
@@ -186,7 +186,7 @@ abstract class StockMovement
     protected $vatPercentage;
 
     /**
-     * This is the type of the stock movement, i.e. 'order', 'delivery', 'return' etc.
+     * This is the type of the stock movement, i.e. 'sale', 'delivery', 'return' etc.
      *
      * @var string
      *
@@ -209,17 +209,25 @@ abstract class StockMovement
     protected $product;
 
     /**
-     * If the type equals 'order' this will be the associated order line.
+     * If the type equals 'sale' this will be the associated order line.
      *
      * @var OrderLineInterface|null
      *
-     * @ORM\OneToOne(targetEntity="Loevgaard\DandomainFoundation\Entity\OrderLine")
+     * @ORM\ManyToOne(targetEntity="Loevgaard\DandomainFoundation\Entity\OrderLine", inversedBy="stockMovements")
      */
     protected $orderLine;
+
+    /**
+     * @var bool
+     *
+     * @ORM\Column(type="boolean")
+     */
+    protected $orderLineRemoved;
 
     public function __construct()
     {
         $this->complaint = false;
+        $this->orderLineRemoved = false;
     }
 
     public function __call($name, $arguments)
@@ -262,8 +270,10 @@ abstract class StockMovement
         Assert::that($this->vatPercentage)->float('vatPercent needs to be a float', 'vatPercentage')->greaterOrEqualThan(0);
         Assert::that($this->type)->choice(self::getTypes());
 
-        if ($this->isType(self::TYPE_ORDER)) {
-            Assert::that($this->orderLine)->isInstanceOf(OrderLineInterface::class);
+        if ($this->isType(self::TYPE_SALE)) {
+            if (!$this->isOrderLineRemoved()) {
+                Assert::that($this->orderLine)->isInstanceOf(OrderLineInterface::class);
+            }
             Assert::that($this->quantity)->lessThan(0);
         } elseif ($this->isType(self::TYPE_RETURN)) {
             Assert::that($this->quantity)->greaterThan(0, 'quantity should be greater than 0 if the type is a return');
@@ -336,45 +346,88 @@ abstract class StockMovement
             ->setQuantity(-1 * $orderLine->getQuantity()) // we multiply by -1 because we count an order as 'outgoing' from the stock
             ->setPrice($orderLine->getUnitPrice())
             ->setVatPercentage($orderLine->getVatPct())
-            ->setType(static::TYPE_ORDER)
+            ->setType(static::TYPE_SALE)
             ->setProduct($orderLine->getProduct())
             ->setOrderLine($orderLine)
-            ->setReference('Ordre '.$orderLine->getOrder()->getExternalId())
+            ->setReference('Order '.$orderLine->getOrder()->getExternalId())
             ->setCreatedAt($created)
             ->setUpdatedAt($created) // for order lines we specifically override the createdAt and updatedAt dates because the stock movement is actually happening when the order comes in and not when the order is synced
         ;
 
-        if ($orderLine->getProduct()->isPriceLess()) {
-            $retailPrice = new Money(0, new Currency($orderLine->getUnitPrice()->getCurrency()->getCode()));
-        } else {
+        if ($orderLine->getProduct()->getPrices()->count()) {
             $retailPrice = $orderLine->getProduct()->findPriceByCurrency($orderLine->getUnitPrice()->getCurrency());
             if (!$retailPrice) {
                 throw new UndefinedPriceForCurrencyException('The product `'.$orderLine->getProduct()->getNumber().'` does not have a price defined for currency `'.$orderLine->getUnitPrice()->getCurrency()->getCode().'`');
             }
 
             $retailPrice = $retailPrice->getUnitPriceExclVat($orderLine->getVatPct());
+        } else {
+            $retailPrice = new Money(0, new Currency($orderLine->getUnitPrice()->getCurrency()->getCode()));
         }
+
         $this->setRetailPrice($retailPrice);
     }
 
     /**
-     * @FormAssert\Callback
+     * @return StockMovement
      *
-     * @param ExecutionContextInterface $context
+     * @throws CurrencyMismatchException
+     * @throws UnsetCurrencyException
      */
-    public function validateForm(ExecutionContextInterface $context)
+    public function copy(): self
     {
-        if ($this->complaint && $this->quantity >= 0) {
-            $context->buildViolation('The complaint can only be set if the quantity is less than 0')
-                ->atPath('complaint')
-                ->addViolation();
+        $stockMovement = new static();
+        $stockMovement
+            ->setQuantity($this->getQuantity())
+            ->setComplaint($this->isComplaint())
+            ->setReference($this->getReference())
+            ->setRetailPrice($this->getRetailPrice())
+            ->setPrice($this->getPrice())
+            ->setVatPercentage($this->getVatPercentage())
+            ->setType($this->getType())
+            ->setProduct($this->getProduct())
+            ->setOrderLine($this->getOrderLine())
+            ->setOrderLineRemoved($this->isOrderLineRemoved())
+        ;
+
+        return $stockMovement;
+    }
+
+    /**
+     * @return StockMovement
+     *
+     * @throws CurrencyMismatchException
+     * @throws UnsetCurrencyException
+     */
+    public function inverse(): self
+    {
+        $stockMovement = $this->copy();
+        $stockMovement->setQuantity($stockMovement->getQuantity() * -1);
+
+        return $stockMovement;
+    }
+
+    /**
+     * @param StockMovement $stockMovement
+     *
+     * @return StockMovement
+     *
+     * @throws CurrencyMismatchException
+     * @throws StockMovementProductMismatchException
+     * @throws UnsetCurrencyException
+     */
+    public function diff(self $stockMovement): self
+    {
+        if ($this->getProduct()->getId() !== $stockMovement->getProduct()->getId()) {
+            throw new StockMovementProductMismatchException('Can only compute diff between stock movements where the products equal');
         }
 
-        if ($this->isType(self::TYPE_ORDER) && is_null($this->orderLine)) {
-            $context->buildViolation('If the stock movement is of type `'.self::TYPE_ORDER.'`, the order line also has to be set')
-                ->atPath('orderLine')
-                ->addViolation();
-        }
+        $qty = -1 * ($this->getQuantity() - $stockMovement->getQuantity());
+
+        $diff = $stockMovement->copy();
+        $diff->setQuantity($qty);
+
+        return $diff;
     }
 
     /******************
@@ -390,7 +443,7 @@ abstract class StockMovement
     {
         return [
             self::TYPE_DELIVERY => self::TYPE_DELIVERY,
-            self::TYPE_ORDER => self::TYPE_ORDER,
+            self::TYPE_SALE => self::TYPE_SALE,
             self::TYPE_REGULATION => self::TYPE_REGULATION,
             self::TYPE_RETURN => self::TYPE_RETURN,
         ];
@@ -437,7 +490,7 @@ abstract class StockMovement
      */
     public function getQuantity(): int
     {
-        return $this->quantity;
+        return (int) $this->quantity;
     }
 
     /**
@@ -459,7 +512,7 @@ abstract class StockMovement
      */
     public function isComplaint(): bool
     {
-        return $this->complaint;
+        return (bool) $this->complaint;
     }
 
     /**
@@ -479,7 +532,7 @@ abstract class StockMovement
      */
     public function getReference(): string
     {
-        return $this->reference;
+        return (string) $this->reference;
     }
 
     /**
@@ -499,7 +552,7 @@ abstract class StockMovement
      */
     public function getCurrency(): string
     {
-        return $this->currency;
+        return (string) $this->currency;
     }
 
     /**
@@ -599,7 +652,7 @@ abstract class StockMovement
      */
     public function getVatPercentage(): float
     {
-        return $this->vatPercentage;
+        return (float) $this->vatPercentage;
     }
 
     /**
@@ -619,7 +672,7 @@ abstract class StockMovement
      */
     public function getType(): string
     {
-        return $this->type;
+        return (string) $this->type;
     }
 
     /**
@@ -637,7 +690,7 @@ abstract class StockMovement
     /**
      * @return ProductInterface
      */
-    public function getProduct(): ProductInterface
+    public function getProduct(): ?ProductInterface
     {
         return $this->product;
     }
@@ -670,6 +723,26 @@ abstract class StockMovement
     public function setOrderLine(?OrderLineInterface $orderLine): self
     {
         $this->orderLine = $orderLine;
+
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isOrderLineRemoved(): bool
+    {
+        return (bool) $this->orderLineRemoved;
+    }
+
+    /**
+     * @param bool $orderLineRemoved
+     *
+     * @return StockMovement
+     */
+    public function setOrderLineRemoved(bool $orderLineRemoved)
+    {
+        $this->orderLineRemoved = $orderLineRemoved;
 
         return $this;
     }
