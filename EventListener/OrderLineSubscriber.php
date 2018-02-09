@@ -32,6 +32,7 @@ class OrderLineSubscriber implements EventSubscriber
 
     /**
      * @param LifecycleEventArgs $args
+     * @throws \Doctrine\ORM\ORMException
      * @throws \Loevgaard\DandomainStockBundle\Exception\CurrencyMismatchException
      * @throws \Loevgaard\DandomainStockBundle\Exception\UnsetCurrencyException
      */
@@ -48,7 +49,7 @@ class OrderLineSubscriber implements EventSubscriber
                     ->setOrderLineRemoved(true)
                     ->setOrderLine(null);
 
-                $args->getObjectManager()->persist($stockMovement);
+                $this->stockMovementRepository->persist($stockMovement);
             }
 
             foreach ($entity->getStockMovements() as $stockMovement) {
