@@ -1,4 +1,11 @@
 # Dandomain Stock Bundle
+
+[![Latest Version on Packagist][ico-version]][link-packagist]
+[![Software License][ico-license]](LICENSE.md)
+[![Build Status][ico-travis]][link-travis]
+[![Coverage Status][ico-scrutinizer]][link-scrutinizer]
+[![Quality Score][ico-code-quality]][link-code-quality]
+
 Symfony bundle to handle stock i Dandomain, especially stock movements
 
 ## Installation
@@ -86,3 +93,14 @@ loevgaard_dandomain_stock:
 ```bash
 $ php bin/console doctrine:schema:update --force
 ```
+
+[ico-version]: https://img.shields.io/packagist/v/loevgaard/dandomain-stock-bundle.svg?style=flat-square
+[ico-license]: https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square
+[ico-travis]: https://img.shields.io/travis/loevgaard/dandomain-stock-bundle/master.svg?style=flat-square
+[ico-scrutinizer]: https://img.shields.io/scrutinizer/coverage/g/loevgaard/dandomain-stock-bundle.svg?style=flat-square
+[ico-code-quality]: https://img.shields.io/scrutinizer/g/loevgaard/dandomain-stock-bundle.svg?style=flat-square
+
+[link-packagist]: https://packagist.org/packages/loevgaard/dandomain-stock-bundle
+[link-travis]: https://travis-ci.org/loevgaard/dandomain-stock-bundle
+[link-scrutinizer]: https://scrutinizer-ci.com/g/loevgaard/dandomain-stock-bundle/code-structure
+[link-code-quality]: https://scrutinizer-ci.com/g/loevgaard/dandomain-stock-bundle
