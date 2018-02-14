@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Loevgaard\DandomainStockBundle\Tests\DependencyInjection;
 
 use Loevgaard\DandomainStockBundle\DependencyInjection\LoevgaardDandomainStockExtension;
@@ -35,7 +37,7 @@ class LoevgaardDandomainStockExtensionTest extends TestCase
      */
     protected function getEmptyConfig()
     {
-        $yaml = <<<EOF
+        $yaml = <<<'EOF'
 dandomain_order_state_ids: [3]
 EOF;
         $parser = new Parser();

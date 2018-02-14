@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Loevgaard\DandomainStockBundle\Tests\EventListener;
 
 use Doctrine\ORM\Event\LifecycleEventArgs;

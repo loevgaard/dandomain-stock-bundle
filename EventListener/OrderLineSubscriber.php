@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Loevgaard\DandomainStockBundle\EventListener;
 
 use Doctrine\Common\EventSubscriber;
