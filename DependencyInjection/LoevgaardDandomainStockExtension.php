@@ -27,7 +27,7 @@ class LoevgaardDandomainStockExtension extends Extension implements PrependExten
     {
         $ext = 'doctrine';
 
-        if(!$container->hasExtension($ext)) {
+        if (!$container->hasExtension($ext)) {
             throw new \LogicException('You need to enable the doctrine bundle');
         }
 
