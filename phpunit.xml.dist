@@ -10,7 +10,7 @@
          processIsolation="false"
          stopOnFailure="false">
     <testsuites>
-        <testsuite name="Loevgaard Stock Bundle test suite">
+        <testsuite name="Loevgaard Stock Bundle Test Suite">
             <directory suffix="Test.php">./Tests</directory>
         </testsuite>
     </testsuites>
