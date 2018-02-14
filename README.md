@@ -1,7 +1,7 @@
 # Dandomain Stock Bundle
 
 [![Latest Version on Packagist][ico-version]][link-packagist]
-[![Software License][ico-license]](LICENSE.md)
+[![Software License][ico-license]](LICENSE)
 [![Build Status][ico-travis]][link-travis]
 [![Coverage Status][ico-scrutinizer]][link-scrutinizer]
 [![Quality Score][ico-code-quality]][link-code-quality]
@@ -12,9 +12,9 @@ Symfony bundle to handle stock i Dandomain, especially stock movements
 
 ### Step 1: Install dependencies
 
-This bundle depends on the [Dandomain Foundation Bundle](https://github.com/loevgaard/dandomain-foundation-bundle) and the [Doctrine2 Behaviors Bundle by KNP Labs](https://github.com/KnpLabs/DoctrineBehaviors).
+This bundle depends on the [Doctrine2 Behaviors Bundle by KNP Labs](https://github.com/KnpLabs/DoctrineBehaviors).
 
-Install those bundles first, and then return to this page.
+Install that bundle first, and then return to this page.
 
 ### Step 2: Download the bundle
 
@@ -43,10 +43,10 @@ class AppKernel extends Kernel
 {
     public function registerBundles()
     {
-        $bundles = array(
+        $bundles = [
             // ...
             new Loevgaard\DandomainStockBundle\LoevgaardDandomainStockBundle(),
-        );
+        ];
 
         // ...
     }
@@ -55,44 +55,19 @@ class AppKernel extends Kernel
 }
 ```
 
-### Step 4: Create Doctrine ORM Entities
-
-```php
-<?php
-// src/AppBundle/Entity/StockMovement.php
-
-namespace AppBundle\Entity;
-
-use Loevgaard\DandomainStockBundle\Entity\StockMovement as BaseStockMovement;
-use Doctrine\ORM\Mapping as ORM;
-
-/**
- * @ORM\Entity
- * @ORM\Table(name="stock_movements", indexes={@ORM\Index(columns={"type"})})
- * @ORM\HasLifecycleCallbacks()
- */
-class StockMovement extends BaseStockMovement
-{        
-    public function __construct()
-    {
-        parent::__construct();
-        // your own logic
-    }
-}
-```
-
-### Step 5: Configure the bundle
+### Step 4: Configure the bundle
 ```yaml
 # app/config/config.yml
 loevgaard_dandomain_stock:
-    stock_movement_class: AppBundle\Entity\StockMovement
     dandomain_order_state_ids: [3]
 ```
 
-### Step 6: Update your database schema
+### Step 5: Update your database schema
 ```bash
 $ php bin/console doctrine:schema:update --force
 ```
+
+or use [Doctrine Migrations](https://symfony.com/doc/master/bundles/DoctrineMigrationsBundle/index.html).
 
 [ico-version]: https://img.shields.io/packagist/v/loevgaard/dandomain-stock-bundle.svg?style=flat-square
 [ico-license]: https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square
