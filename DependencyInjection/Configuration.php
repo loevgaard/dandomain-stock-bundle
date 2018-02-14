@@ -14,10 +14,6 @@ class Configuration implements ConfigurationInterface
 
         $rootNode
             ->children()
-                ->scalarNode('stock_movement_class')
-                    ->isRequired()
-                    ->cannotBeEmpty()
-                ->end()
                 ->arrayNode('dandomain_order_state_ids')
                     ->info('The order state ids from Dandomain that should be considered as stock movements when an order is persisted')
                     ->isRequired()

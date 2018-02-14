@@ -14,7 +14,6 @@ class LoevgaardDandomainStockExtension extends Extension
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 
-        $container->setParameter('loevgaard_dandomain_stock.stock_movement_class', $config['stock_movement_class']);
         $container->setParameter('loevgaard_dandomain_stock.dandomain_order_state_ids', $config['dandomain_order_state_ids']);
 
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));

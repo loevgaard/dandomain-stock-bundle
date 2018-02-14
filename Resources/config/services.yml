@@ -1,16 +1,14 @@
 services:
     # Repositories
-    loevgaard_dandomain_stock.factory.stock_movement:
-        class: Loevgaard\DandomainStockBundle\Repository\StockMovementRepository
+    loevgaard_dandomain_stock.repository.stock_movement:
+        class: Loevgaard\DandomainStock\Repository\StockMovementRepository
         arguments:
             - "@doctrine"
-            - "%loevgaard_dandomain_stock.stock_movement_class%"
 
     # Event Listeners / Subscribers
     loevgaard_dandomain_stock.event_listener.order:
         class: Loevgaard\DandomainStockBundle\EventListener\OrderSubscriber
         arguments:
-            - "@loevgaard_dandomain_stock.factory.stock_movement"
             - "%loevgaard_dandomain_stock.dandomain_order_state_ids%"
         tags:
             - { name: doctrine.event_subscriber }
@@ -18,6 +16,6 @@ services:
     loevgaard_dandomain_stock.event_listener.order_line:
         class: Loevgaard\DandomainStockBundle\EventListener\OrderLineSubscriber
         arguments:
-            - "@loevgaard_dandomain_stock.factory.stock_movement"
+            - "@loevgaard_dandomain_stock.repository.stock_movement"
         tags:
             - { name: doctrine.event_subscriber }
