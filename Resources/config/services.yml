@@ -15,7 +15,5 @@ services:
 
     loevgaard_dandomain_stock.event_listener.order_line:
         class: Loevgaard\DandomainStockBundle\EventListener\OrderLineSubscriber
-        arguments:
-            - "@loevgaard_dandomain_stock.repository.stock_movement"
         tags:
             - { name: doctrine.event_subscriber }
