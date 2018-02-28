@@ -97,11 +97,6 @@ class OrderSubscriber implements EventSubscriber
 
         $i = 0;
         foreach ($entity->getOrderLines() as $orderLine) {
-            // if the quantity is 0 we don't want to add a stock movement since this will just pollute the stock movement table
-            if (0 === $orderLine->getQuantity()) {
-                continue;
-            }
-
             // if the order line does not have a valid product, we wont add it to the stock movements table
             // examples of products like this are discounts
             if (!$orderLine->getProduct()) {
@@ -114,6 +109,11 @@ class OrderSubscriber implements EventSubscriber
             $effectiveStockMovement = $orderLine->computeEffectiveStockMovement();
             if ($effectiveStockMovement) {
                 $stockMovement = $effectiveStockMovement->diff($stockMovement);
+            }
+
+            // if the quantity is 0 we don't want to add a stock movement since this will just pollute the stock movement table
+            if($stockMovement->getQuantity() === 0) {
+                continue;
             }
 
             $orderLine->addStockMovement($stockMovement);
