@@ -6,7 +6,9 @@ namespace Loevgaard\DandomainStockBundle\EventListener;
 
 use Doctrine\Common\EventSubscriber;
 use Doctrine\Common\Persistence\Event\LifecycleEventArgs;
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Events;
+use Doctrine\ORM\ORMException;
 use Loevgaard\DandomainFoundation\Entity\Generated\OrderLineInterface;
 use Loevgaard\DandomainStock\Entity\StockMovement;
 use Loevgaard\DandomainStock\Exception\CurrencyMismatchException;
@@ -28,8 +30,9 @@ class OrderLineSubscriber implements EventSubscriber
      *
      * @throws CurrencyMismatchException
      * @throws UnsetCurrencyException
+     * @throws ORMException
      */
-    public function preRemove(LifecycleEventArgs $args)
+    public function preRemove(LifecycleEventArgs $args) : bool
     {
         /** @var OrderLineInterface $entity */
         $entity = $args->getObject();
@@ -37,6 +40,10 @@ class OrderLineSubscriber implements EventSubscriber
         if (!($entity instanceof OrderLineInterface)) {
             return false;
         }
+
+        /** @var EntityManager $em */
+        $em = $args->getObjectManager();
+        $uow = $em->getUnitOfWork();
 
         $effectiveStockMovement = $entity->computeEffectiveStockMovement();
 
@@ -48,7 +55,7 @@ class OrderLineSubscriber implements EventSubscriber
                 ->setOrderLineRemoved(true)
                 ->setOrderLine(null);
 
-            $args->getObjectManager()->persist($stockMovement);
+            $em->persist($stockMovement);
         }
 
         foreach ($entity->getStockMovements() as $stockMovement) {
@@ -56,6 +63,11 @@ class OrderLineSubscriber implements EventSubscriber
                 ->setOrderLineRemoved(true)
                 ->setOrderLine(null);
         }
+
+        // the preRemove can be called from the onFlush event which has some limitations regarding changing entities
+        // see http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/events.html#onflush
+        // and http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/events.html#preremove
+        $uow->computeChangeSets();
 
         return true;
     }
