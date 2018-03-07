@@ -38,7 +38,9 @@ class OrderLineSubscriber implements EventSubscriber
         }
 
         $effectiveStockMovement = $entity->computeEffectiveStockMovement();
-        if ($effectiveStockMovement) {
+
+        // if the quantity is 0 we don't want to add a stock movement since this will just pollute the stock movement table
+        if ($effectiveStockMovement && $effectiveStockMovement->getQuantity() !== 0) {
             $stockMovement = $effectiveStockMovement->inverse();
             $stockMovement
                 ->setOrderLineRemoved(true)
