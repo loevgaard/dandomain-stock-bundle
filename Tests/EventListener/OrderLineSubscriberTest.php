@@ -18,8 +18,7 @@ final class OrderLineSubscriberTest extends TestCase
 {
     public function testEventsAndCorrespondingMethods()
     {
-        $stockMovementRepository = $this->getStockMovementRepository();
-        $subscriber = new OrderLineSubscriber($stockMovementRepository);
+        $subscriber = new OrderLineSubscriber();
 
         $events = [
             Events::preRemove,
@@ -42,9 +41,8 @@ final class OrderLineSubscriberTest extends TestCase
     public function testWrongInstanceType()
     {
         $lifecycleEventArgs = $this->getLifecycleEventArgs(new \stdClass());
-        $stockMovementRepository = $this->getStockMovementRepository();
 
-        $subscriber = new OrderLineSubscriber($stockMovementRepository);
+        $subscriber = new OrderLineSubscriber();
         $res = $subscriber->preRemove($lifecycleEventArgs);
 
         $this->assertFalse($res);
@@ -58,9 +56,8 @@ final class OrderLineSubscriberTest extends TestCase
     public function testCorrectInstanceType()
     {
         $lifecycleEventArgs = $this->getLifecycleEventArgs(new OrderLine());
-        $stockMovementRepository = $this->getStockMovementRepository();
 
-        $subscriber = new OrderLineSubscriber($stockMovementRepository);
+        $subscriber = new OrderLineSubscriber();
         $res = $subscriber->preRemove($lifecycleEventArgs);
 
         $this->assertTrue($res);

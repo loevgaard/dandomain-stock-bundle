@@ -56,18 +56,21 @@ class OrderLineSubscriber implements EventSubscriber
                 ->setOrderLine(null);
 
             $em->persist($stockMovement);
+            $uow->computeChangeSet($em->getClassMetadata(get_class($stockMovement)), $stockMovement);
         }
 
         foreach ($entity->getStockMovements() as $stockMovement) {
             $stockMovement
                 ->setOrderLineRemoved(true)
                 ->setOrderLine(null);
+
+            $uow->recomputeSingleEntityChangeSet($em->getClassMetadata(get_class($stockMovement)), $stockMovement);
         }
 
         // the preRemove can be called from the onFlush event which has some limitations regarding changing entities
         // see http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/events.html#onflush
         // and http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/events.html#preremove
-        $uow->computeChangeSets();
+        //$uow->computeChangeSets();
 
         return true;
     }
