@@ -16,14 +16,14 @@ use Loevgaard\DandomainStock\Exception\StockMovementProductMismatchException;
 use Loevgaard\DandomainStock\Exception\UndefinedPriceForCurrencyException;
 use Loevgaard\DandomainStock\Exception\UnsetCurrencyException;
 use Loevgaard\DandomainStock\Exception\UnsetProductException;
-use Loevgaard\DandomainStockBundle\EventListener\OrderSubscriber;
+use Loevgaard\DandomainStockBundle\EventListener\StockMovementSubscriber;
 use PHPUnit\Framework\TestCase;
 
-final class OrderSubscriberTest extends TestCase
+final class StockMovementSubscriberTest extends TestCase
 {
     public function testEventsAndCorrespondingMethods()
     {
-        $subscriber = new OrderSubscriber([]);
+        $subscriber = new StockMovementSubscriber([]);
 
         $events = [
             Events::prePersist,
@@ -32,7 +32,7 @@ final class OrderSubscriberTest extends TestCase
 
         $this->assertEquals($events, $subscriber->getSubscribedEvents());
 
-        $refl = new \ReflectionClass(OrderSubscriber::class);
+        $refl = new \ReflectionClass(StockMovementSubscriber::class);
 
         foreach ($events as $event) {
             $this->assertTrue($refl->hasMethod($event));
@@ -50,7 +50,7 @@ final class OrderSubscriberTest extends TestCase
     {
         $lifecycleEventArgs = $this->getLifecycleEventArgs(new \stdClass());
 
-        $subscriber = new OrderSubscriber([]);
+        $subscriber = new StockMovementSubscriber([]);
         $res = $subscriber->preUpdate($lifecycleEventArgs);
 
         $this->assertFalse($res);
@@ -73,7 +73,7 @@ final class OrderSubscriberTest extends TestCase
 
         $lifecycleEventArgs = $this->getLifecycleEventArgs($order);
 
-        $subscriber = new OrderSubscriber([3]);
+        $subscriber = new StockMovementSubscriber([3]);
         $res = $subscriber->preUpdate($lifecycleEventArgs);
 
         $this->assertFalse($res);
@@ -92,7 +92,7 @@ final class OrderSubscriberTest extends TestCase
 
         $lifecycleEventArgs = $this->getLifecycleEventArgs($order);
 
-        $subscriber = new OrderSubscriber([1]);
+        $subscriber = new StockMovementSubscriber([1]);
         $res = $subscriber->preUpdate($lifecycleEventArgs);
 
         $this->assertTrue($res);
@@ -115,7 +115,7 @@ final class OrderSubscriberTest extends TestCase
 
         $lifecycleEventArgs = $this->getLifecycleEventArgs($order);
 
-        $subscriber = new OrderSubscriber([$orderStateId]);
+        $subscriber = new StockMovementSubscriber([$orderStateId]);
         $res = $subscriber->preUpdate($lifecycleEventArgs);
 
         $this->assertTrue($res);

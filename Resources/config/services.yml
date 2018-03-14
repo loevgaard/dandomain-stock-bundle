@@ -7,13 +7,8 @@ services:
 
     # Event Listeners / Subscribers
     loevgaard_dandomain_stock.event_listener.order:
-        class: Loevgaard\DandomainStockBundle\EventListener\OrderSubscriber
+        class: Loevgaard\DandomainStockBundle\EventListener\StockMovementSubscriber
         arguments:
             - "%loevgaard_dandomain_stock.dandomain_order_state_ids%"
-        tags:
-            - { name: doctrine.event_subscriber }
-
-    loevgaard_dandomain_stock.event_listener.order_line:
-        class: Loevgaard\DandomainStockBundle\EventListener\OrderLineSubscriber
         tags:
             - { name: doctrine.event_subscriber }
