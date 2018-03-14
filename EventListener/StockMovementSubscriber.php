@@ -58,7 +58,7 @@ class StockMovementSubscriber implements EventSubscriber
 
         foreach ($uow->getScheduledEntityInsertions() as $entity) {
             /** @var OrderLineInterface $entity */
-            if(!$this->isValidOrderLine($entity)) {
+            if(!$this->isOrderLine($entity) || !$this->isValidState($entity)) {
                 continue;
             }
 
@@ -69,7 +69,7 @@ class StockMovementSubscriber implements EventSubscriber
 
         foreach ($uow->getScheduledEntityUpdates() as $entity) {
             /** @var OrderLineInterface $entity */
-            if(!$this->isValidOrderLine($entity)) {
+            if(!$this->isOrderLine($entity) || !$this->isValidState($entity)) {
                 continue;
             }
 
@@ -85,7 +85,7 @@ class StockMovementSubscriber implements EventSubscriber
 
         foreach ($uow->getScheduledEntityDeletions() as $entity) {
             /** @var OrderLineInterface $entity */
-            if(!$this->isValidOrderLine($entity)) {
+            if(!$this->isOrderLine($entity)) {
                 continue;
             }
 
@@ -112,12 +112,16 @@ class StockMovementSubscriber implements EventSubscriber
         }
     }
 
-    private function isValidOrderLine($entity) : bool
+    private function isOrderLine($entity) : bool
     {
-        return $entity instanceof OrderLineInterface
-            && $entity->getOrder()
-            && $entity->getOrder()->getState()
-            && in_array($entity->getOrder()->getState()->getExternalId(), $this->orderStateIds);
+        return $entity instanceof OrderLineInterface;
+    }
+
+    private function isValidState(OrderLineInterface $orderLine) : bool
+    {
+        return $orderLine->getOrder()
+            && $orderLine->getOrder()->getState()
+            && in_array($orderLine->getOrder()->getState()->getExternalId(), $this->orderStateIds);
     }
 
     /**
