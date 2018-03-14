@@ -5,14 +5,12 @@ declare(strict_types=1);
 namespace Loevgaard\DandomainStockBundle\EventListener;
 
 use Doctrine\Common\EventSubscriber;
-use Doctrine\Common\Persistence\Event\LifecycleEventArgs;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\ORMException;
 use Doctrine\ORM\UnitOfWork;
-use Loevgaard\DandomainFoundation\Entity\Generated\OrderInterface;
 use Loevgaard\DandomainFoundation\Entity\Generated\OrderLineInterface;
 use Loevgaard\DandomainStock\Entity\Generated\StockMovementInterface;
 use Loevgaard\DandomainStock\Entity\StockMovement;
@@ -66,7 +64,7 @@ class StockMovementSubscriber implements EventSubscriber
 
             $stockMovement = $this->stockMovementFromOrderLine($entity);
 
-            $this->persistStockMovement($stockMovement);
+            $this->persistStockMovement($stockMovement, $em, $uow);
         }
 
         foreach ($uow->getScheduledEntityUpdates() as $entity) {
@@ -82,7 +80,7 @@ class StockMovementSubscriber implements EventSubscriber
                 $stockMovement->setType(StockMovement::TYPE_REGULATION);
             }
 
-            $this->persistStockMovement($stockMovement);
+            $this->persistStockMovement($stockMovement, $em, $uow);
         }
 
         foreach ($uow->getScheduledEntityDeletions() as $entity) {
@@ -93,15 +91,14 @@ class StockMovementSubscriber implements EventSubscriber
 
             $effectiveStockMovement = $entity->computeEffectiveStockMovement();
 
-            // if the quantity is 0 we don't want to add a stock movement since this will just pollute the stock movement table
-            if ($effectiveStockMovement && $effectiveStockMovement->getQuantity() !== 0) {
+            if ($effectiveStockMovement) {
                 $stockMovement = $effectiveStockMovement->inverse();
                 $stockMovement
                     ->setType(StockMovement::TYPE_REGULATION) // we set the type as regulation since it is not a sale now
                     ->setOrderLineRemoved(true)
                     ->setOrderLine(null);
 
-                $this->persistStockMovement($stockMovement);
+                $this->persistStockMovement($stockMovement, $em, $uow);
             }
 
             foreach ($entity->getStockMovements() as $stockMovement) {
@@ -147,67 +144,20 @@ class StockMovementSubscriber implements EventSubscriber
      * @param StockMovementInterface $stockMovement
      * @param EntityManager $entityManager
      * @param UnitOfWork $unitOfWork
+     * @return boolean
      * @throws ORMException
      */
-    private function persistStockMovement(StockMovementInterface $stockMovement, EntityManager $entityManager, UnitOfWork $unitOfWork)
+    private function persistStockMovement(StockMovementInterface $stockMovement, EntityManager $entityManager, UnitOfWork $unitOfWork) : bool
     {
+        // if the quantity is 0 we don't want to add a stock movement since this will just pollute the stock movement table
+        if($stockMovement->getQuantity() === 0) {
+            return false;
+        }
+
         $stockMovement->validate();
         $entityManager->persist($stockMovement);
         $md = $this->metaData($entityManager, $stockMovement);
         $unitOfWork->computeChangeSet($md, $stockMovement);
-    }
-
-
-    /**
-     * @param LifecycleEventArgs $args
-     *
-     * @return bool
-     *
-     * @throws CurrencyMismatchException
-     * @throws StockMovementProductMismatchException
-     * @throws UndefinedPriceForCurrencyException
-     * @throws UnsetCurrencyException
-     * @throws UnsetProductException
-     */
-    private function update(LifecycleEventArgs $args)
-    {
-        /** @var OrderInterface $entity */
-        $entity = $args->getObject();
-
-        if (!($entity instanceof OrderInterface)) {
-            return false;
-        }
-
-        // only log a stock movement when the order state is in the specified order states, typically 'completed'
-        if (!in_array($entity->getState()->getExternalId(), $this->orderStateIds)) {
-            return false;
-        }
-
-        $i = 0;
-        foreach ($entity->getOrderLines() as $orderLine) {
-            // if the order line does not have a valid product, we wont add it to the stock movements table
-            // examples of products like this are discounts
-            if (!$orderLine->getProduct()) {
-                continue;
-            }
-
-            $stockMovement = new StockMovement();
-            $stockMovement->populateFromOrderLine($orderLine);
-
-            $effectiveStockMovement = $orderLine->computeEffectiveStockMovement();
-            if ($effectiveStockMovement) {
-                $stockMovement = $effectiveStockMovement->diff($stockMovement);
-            }
-
-            // if the quantity is 0 we don't want to add a stock movement since this will just pollute the stock movement table
-            if($stockMovement->getQuantity() === 0) {
-                continue;
-            }
-
-            $orderLine->addStockMovement($stockMovement);
-
-            ++$i;
-        }
 
         return true;
     }
