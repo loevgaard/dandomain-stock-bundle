@@ -26,8 +26,7 @@ final class StockMovementSubscriberTest extends TestCase
         $subscriber = new StockMovementSubscriber([]);
 
         $events = [
-            Events::prePersist,
-            Events::preUpdate,
+            Events::onFlush,
         ];
 
         $this->assertEquals($events, $subscriber->getSubscribedEvents());
@@ -36,91 +35,6 @@ final class StockMovementSubscriberTest extends TestCase
 
         foreach ($events as $event) {
             $this->assertTrue($refl->hasMethod($event));
-        }
-    }
-
-    /**
-     * @throws CurrencyMismatchException
-     * @throws StockMovementProductMismatchException
-     * @throws UndefinedPriceForCurrencyException
-     * @throws UnsetCurrencyException
-     * @throws UnsetProductException
-     */
-    public function testInstanceType()
-    {
-        $lifecycleEventArgs = $this->getLifecycleEventArgs(new \stdClass());
-
-        $subscriber = new StockMovementSubscriber([]);
-        $res = $subscriber->preUpdate($lifecycleEventArgs);
-
-        $this->assertFalse($res);
-    }
-
-    /**
-     * @throws CurrencyMismatchException
-     * @throws StockMovementProductMismatchException
-     * @throws UndefinedPriceForCurrencyException
-     * @throws UnsetCurrencyException
-     * @throws UnsetProductException
-     */
-    public function testOrderStateCondition()
-    {
-        $order = new Order();
-
-        $state = new State();
-        $state->setExternalId(1);
-        $order->setState($state);
-
-        $lifecycleEventArgs = $this->getLifecycleEventArgs($order);
-
-        $subscriber = new StockMovementSubscriber([3]);
-        $res = $subscriber->preUpdate($lifecycleEventArgs);
-
-        $this->assertFalse($res);
-    }
-
-    /**
-     * @throws CurrencyMismatchException
-     * @throws StockMovementProductMismatchException
-     * @throws UndefinedPriceForCurrencyException
-     * @throws UnsetCurrencyException
-     * @throws UnsetProductException
-     */
-    public function testQuantityEqualsZero()
-    {
-        $order = $this->getOrder(1, 0);
-
-        $lifecycleEventArgs = $this->getLifecycleEventArgs($order);
-
-        $subscriber = new StockMovementSubscriber([1]);
-        $res = $subscriber->preUpdate($lifecycleEventArgs);
-
-        $this->assertTrue($res);
-        foreach ($order->getOrderLines() as $orderLine) {
-            $this->assertCount(0, $orderLine->getStockMovements());
-        }
-    }
-
-    /**
-     * @throws CurrencyMismatchException
-     * @throws StockMovementProductMismatchException
-     * @throws UndefinedPriceForCurrencyException
-     * @throws UnsetCurrencyException
-     * @throws UnsetProductException
-     */
-    public function testNoProduct()
-    {
-        $orderStateId = 1;
-        $order = $this->getOrder($orderStateId);
-
-        $lifecycleEventArgs = $this->getLifecycleEventArgs($order);
-
-        $subscriber = new StockMovementSubscriber([$orderStateId]);
-        $res = $subscriber->preUpdate($lifecycleEventArgs);
-
-        $this->assertTrue($res);
-        foreach ($order->getOrderLines() as $orderLine) {
-            $this->assertCount(0, $orderLine->getStockMovements());
         }
     }
 
