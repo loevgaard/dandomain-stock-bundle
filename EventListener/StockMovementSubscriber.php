@@ -114,7 +114,9 @@ class StockMovementSubscriber implements EventSubscriber
 
     private function isOrderLine($entity) : bool
     {
-        return $entity instanceof OrderLineInterface;
+        // if the order line does not have a valid product, we dont consider it an order line in the context of a stock movement
+        // examples of products like this are discounts
+        return $entity instanceof OrderLineInterface && $entity->getProduct();
     }
 
     private function isValidState(OrderLineInterface $orderLine) : bool
